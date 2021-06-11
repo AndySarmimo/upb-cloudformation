@@ -1,0 +1,20 @@
+
+openapi: 3.0.0
+
+paths:
+  /user:
+    get:
+      summary: This endpoint returns a  user given a user id
+      x-amazon-apigateway-integration:
+        type: "aws_proxy"
+        uri:
+          Fn::Sub: "arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:get-user-smm/invocations"
+        httpMethod: "POST"
+        
+    put:
+      summary: This endpoint saves a user to the database
+      x-amazon-apigateway-integration:
+        type: "aws_proxy"
+        uri:
+          Fn::Sub: "arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:put-user-smm/invocations"
+        httpMethod: "POST"
