@@ -4,58 +4,62 @@ Transform:
     - AWS::Serverless-2016-10-31
     
 Description: Lambda Cloudformation
-Resources:
-    GetUser:
-        Type: AWS::Serverless::Function
-        Properties:
-            FunctionName: get-user-smm
-            Handler: user.getUser
-            Runtime: python3.6
-            CodeUri: package/
-            Environment:
-              Variables:
-                USERS_TABLE: !Ref Userstable
+Resources: 
+  
+  GetUser:
+    Type: AWS::Serverless::Function
+    Properties:
+        FunctionName: getUser
+        Handler: user.getUser
+        Runtime: python3.6
+        CodeUri: package/
+        #Role: !GetAtt MyLambdaRole.Arn
+        Policies:
+          - DynamoDBReadPolicy:
+              TableName: !Ref Userstable
+        Environment:
+          Variables:
+            USERS_TABLE: !Ref Userstable
+        Events:
+            GetUsers:
+              Type: Api
+              Properties:
+                RestApiId: !Ref MyAPI
+                Path: "/user/{userId}"
+                Method: GET
+  PutUser:
+    Type: AWS::Serverless::Function
+    Properties:
+        FunctionName: putUser
+        Handler: user.putUser
+        Runtime: python3.6
+        CodeUri: package/
+        Policies:
+          - DynamoDBWritePolicy:
+              TableName: !Ref Userstable
+        #Role: !GetAtt MyLambdaRole.Arn
+        Environment:
+          Variables:
+            USERS_TABLE: !Ref Userstable
+        Events:
+            GetUsers:
+              Type: Api
+              Properties:
+                RestApiId: !Ref MyAPI
+                Path: "/user/{userId}"
+                Method: PUT
             
-            Events:
-              GetUsers:
-                Type: Api
-                Properties:
-                  RestApiId: !Ref MyAPI
-                  Path: /user
-                  Method: GET
-            
-    PutUser:
-        Type: AWS::Serverless::Function
-        Properties:
-            FunctionName: put-user-smm
-            Handler: user.putUser
-            Runtime: python3.6
-            CodeUri: package/
-            Environment:
-              Variables:
-                USERS_TABLE: !Ref Userstable
-                            
-            Events:
-              GetUsers:
-                Type: Api
-                Properties:
-                  RestApiId: !Ref MyAPI
-                  Path: /user
-                  Method: PUT
-            
-                
-                
-    
-    MyAPI:
-        Type: AWS::Serverless::Api
-        Properties:
-          Name: user-api
-          StageName: prod
-          DefinitionBody:
-            Fn::Transform:
-              Name: AWS::Include
-              Parameters:
-                Location: swagger.yaml
+  
+  MyAPI:
+      Type: AWS::Serverless::Api
+      Properties:
+        Name: user-api
+        StageName: prod
+        DefinitionBody:
+          Fn::Transform:
+            Name: AWS::Include
+            Parameters:
+              Location: swagger.yaml
                    
     #Mytable:
     #  Type: AWS::Serverless::SimpleTable
@@ -65,20 +69,20 @@ Resources:
     #      Type: String
         
 
-    Userstable:
-        Type: AWS::DynamoDB::Table
-        Properties:
-          TableName: users-table
-          ProvisionedThroughput:
-            ReadCapacityUnits: 5
-            WriteCapacityUnits: 5
-          KeySchema:
-            - AttributeName: pk
-              KeyType: HASH
-            - AttributeName: sk
-              KeyType: RANGE
-          AttributeDefinitions:
-            - AttributeName: pk
-              AttributeType: S
-            - AttributeName: sk
-              AttributeType: N
+  Userstable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: users-table
+        ProvisionedThroughput:
+          ReadCapacityUnits: 5
+          WriteCapacityUnits: 5
+        KeySchema:
+          - AttributeName: pk
+            KeyType: HASH
+          - AttributeName: sk
+            KeyType: RANGE
+        AttributeDefinitions:
+          - AttributeName: pk
+            AttributeType: S
+          - AttributeName: sk
+            AttributeType: S
