@@ -21,7 +21,7 @@ def getMovie(event, context):
         }
     )
     item = response['Item']
-    print(item)
+    print("imprimiendo item:",item)
     return {
         'statusCode': 200,
         'body': json.dumps(item)
@@ -44,10 +44,10 @@ def putMovie(event, context):
     table.put_item(
         Item={
             'pk': movie_id,
-            'sk': 'age',
-            'name': body_obj['name'],
-            'last_name': body_obj['last_name'],
-            'age': body_obj['age']
+            'sk': 'info',
+            'actors': body_obj['actors'],
+            'year': body_obj['year']
+            
        
         }
     )
@@ -80,7 +80,7 @@ def roomsPerDay(event, context):
         'statusCode': 200,
         'body': json.dumps(item)
     }
-    
+
 def peopleAtteding(event, context):
     print(json.dumps({"running": True}))
     print(json.dumps(event))
@@ -157,10 +157,10 @@ def putPerson(event, context):
     
     path = event["path"]    #people/123?23
     print("Imprimiendo paht:",path)
-    array_path = path.split("/") ##[people,123?23]
-	array_path = array_path.split("?")  ##[peaple,123,23]
-    room_id = array_path[-1]
-	person_id = array_path[-2]
+    array_path = path.split("/") ##[people,123?23] 	
+    sub_array = array_path[1].split("?")  ##[peaple,123,23]    
+    room_id = sub_array[0]
+    person_id = sub_array[1]
   
     body = event["body"]   
     body_obj = json.loads(body)

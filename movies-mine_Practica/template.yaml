@@ -30,8 +30,8 @@ Resources:
   PutMovie:
     Type: AWS::Serverless::Function
     Properties:
-        FunctionName: putUser
-        Handler: movie.putUser
+        FunctionName: putMovie
+        Handler: movie.putMovie
         Runtime: python3.6
         CodeUri: package/
         Policies:
@@ -161,9 +161,7 @@ Resources:
               Properties:
                 RestApiId: !Ref MyAPI
                 Path: "/people/{person_id}"
-				Method: PUT
-				
-  
+                Method: PUT
   MyAPI:
       Type: AWS::Serverless::Api
       Properties:

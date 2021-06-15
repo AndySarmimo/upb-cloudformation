@@ -1,7 +1,6 @@
-
 #!/bin/bash
 DEPLOYMENT_BUCKET="cloudformation-movieb-smm"
-
+STACK_NAME="upb-cloudformation-moviebb-api"
 
 while getopts ":bdp" OPTION; do
     case $OPTION in
@@ -23,7 +22,6 @@ if [[ $BUILD == 1 ]]
 then
     pip3 install --target package -r requirements.txt
     cp -a src/. package/
-  
 fi
 
 if [[ $PACKAGE == 1 ]]
@@ -33,5 +31,5 @@ fi
 
 if [[ $DEPLOY == 1 ]]
 then
-    aws cloudformation deploy --template-file packaged-template.json --stack-name upb-cloudformation-movieb-api --capabilities CAPABILITY_NAMED_IAM
+    aws cloudformation deploy --template-file packaged-template.json --stack-name $STACK_NAME --capabilities CAPABILITY_NAMED_IAM
 fi
