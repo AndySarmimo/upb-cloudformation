@@ -1,10 +1,11 @@
 import json
 import boto3
 import os
+from boto3.dynamodb.conditions import Key
 
-users_table = os.environ['MOVIES_TABLE'] 
+movies_table = os.environ['MOVIES_TABLE'] 
 dynamodb = boto3.resource('dynamodb')
-table = dynamodb.Table(users_table)
+table = dynamodb.Table(movies_table)
 
 def getMovie(event, context):
     print(json.dumps({"running": True}))
@@ -13,11 +14,11 @@ def getMovie(event, context):
     path = event["path"]    #user/123
     array_path = path.split("/") ##[user,123]
     movie_id = array_path[-1]
-    
+   
     response = table.get_item(
         Key={
             'pk': movie_id,
-            'sk': 'age'
+            'sk': 'info'
         }
     )
     item = response['Item']
@@ -45,6 +46,7 @@ def putMovie(event, context):
         Item={
             'pk': movie_id,
             'sk': 'info',
+            'title': body_obj['title'],
             'actors': body_obj['actors'],
             'year': body_obj['year']
             
@@ -65,43 +67,65 @@ def roomsPerDay(event, context):
     print(json.dumps(event))
     
     path = event["path"]    #user/123
+    date = event["queryStringParameters"]["date"]
+    
+    print("=====PATH:",path)
     array_path = path.split("/") ##[user,123]
     movie_id = array_path[-1]
     
-    response = table.get_item(
-        Key={
-            'pk': movie_id,
-            'sk': 'age'
-        }
+    response = table.query(
+        KeyConditionExpression=Key('pk').eq(movie_id) & Key('sk').begins_with('room'),
+        FilterExpression = Key('date').eq(date) 
+        
     )
-    item = response['Item']
-    print(item)
+    
+    
+    item = response['Items']
+    item2 = []
+    for i in item:
+        if i['capacity']>i['occupied']:
+            item2.append(i)
+    
+    
+    
     return {
         'statusCode': 200,
-        'body': json.dumps(item)
+        'body': json.dumps(item2)
     }
-
-def peopleAtteding(event, context):
+    
+def peopleAttending(event, context):
     print(json.dumps({"running": True}))
     print(json.dumps(event))
     
     path = event["path"]    #peopleAtteding/movie/123/room/2
-    array_path = path.split("/") ##[peopleAtteding/movie/123/room/2]
+    array_path = path.split("/") ##[peopleAtteding/movies/123/room/2]
     room_id = array_path[-1]
-    movie_id = array_path[2]
+    movie_id = array_path[3]
+    
+    print("->movieid:",movie_id)
+    print("->roomid:",room_id)
+    
+    
+    
+    #response = table.query(
+    #    KeyConditionExpression=Key('pk').eq(movie_id) & Key('sk').eq(room_id),
+        
+    #)
+    
     response = table.get_item(
         Key={
             'pk': movie_id,
             'sk': room_id
         }
     )
-    item = response['Item']
+    
+    item = response['Item']['attending']
+    
     print(item)
     return {
         'statusCode': 200,
         'body': json.dumps(item)
     }
-    
     
     
 def getRoom(event, context):
@@ -119,14 +143,22 @@ def getRoom(event, context):
             'sk': 'info'
         }
     )
+    
+    
     item = response['Item']
+    seats_available = int(item['capacity']) - int(item['occupied'])
+    dimension = item['3D']
+    
+    s_a = "seats_available : " + str(seats_available)
+    dim = "is 3D? : " + dimension
+    
     print(item)
     return {
         'statusCode': 200,
-        'body': json.dumps(item)
+        'body': json.dumps(s_a + " - "+ dim)
     }
     
-    
+        
 def getPerson(event, context):
     print(json.dumps({"running": True}))
     print(json.dumps(event))
@@ -136,13 +168,15 @@ def getPerson(event, context):
     person_id = array_path[-1]
 
     
-    response = table.get_item(
-        Key={
-            'pk': person_id,
-            'sk': 'info'
-        }
+    response = table.query(
+        KeyConditionExpression=Key('pk').eq(person_id) & Key('sk').begins_with('movie')
+       
     )
-    item = response['Item']
+    
+    item = response['Items']
+
+    
+    
     print(item)
     return {
         'statusCode': 200,
@@ -151,33 +185,65 @@ def getPerson(event, context):
     
     
     
-def putPerson(event, context):
+def putPeopleRoom(event, context):
     print(json.dumps({"running": True}))
     print(json.dumps(event))
     
-    path = event["path"]    #people/123?23
+    path = event["path"]    #rooms/room_01
     print("Imprimiendo paht:",path)
     array_path = path.split("/") ##[people,123?23] 	
-    sub_array = array_path[1].split("?")  ##[peaple,123,23]    
-    room_id = sub_array[0]
-    person_id = sub_array[1]
-  
-    body = event["body"]   
-    body_obj = json.loads(body)
+      
+    room_id = array_path[-1]
     
-    print("Imprimiendo paht:",person_id)
     
-    table.put_item(
-        Item={
-            'pk': person_id,
-            'sk': room_id,
-            'name': body_obj['name']
-       
+    #buscar al room id y sus asientos
+    roomT = table.get_item(
+        Key={
+            'pk': room_id,
+            'sk': 'info'
         }
     )
     
     
+    item = roomT['Items']
+    seats_available = int(item['capacity']) - int(item['occupied'])
+    dimension = item['3D']
+    attending = item['attending']
+    
+    print("====response",roomT)
+    
+  
+    body = event["body"]   
+    body_obj = json.loads(body)
+    
+    #obtener personas para calcular
+    people = body_obj['people']
+    
+    if(seats_available >= len(people)):
+        attending.append(people)
+        table.put_item(
+            Item={
+                'pk': room_id,
+                'sk': 'info',
+                'attending': attending,
+                '3D': dimension,
+                'occupied': str( item['occupied'] + len(people) )
+           
+            }
+        )
+    else:
+        return {
+        'statusCode': 200,
+        'body': json.dumps('No hay asientos disponibles')
+        }	
+    
+    
+    
+    
+    
+    
+    
     return {
         'statusCode': 200,
-        'body': json.dumps('Hello from Lambda!')
+        'body': json.dumps('Todo bien')
     }	

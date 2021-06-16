@@ -1,6 +1,6 @@
 #!/bin/bash
 DEPLOYMENT_BUCKET="cloudformation-movieb-smm"
-STACK_NAME="upb-cloudformation-moviebb-api"
+STACK_NAME="upb-cloudformation-movieb-api"
 
 while getopts ":bdp" OPTION; do
     case $OPTION in

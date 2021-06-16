@@ -48,14 +48,11 @@ Resources:
                 RestApiId: !Ref MyAPI
                 Path: "/movies/{movie_id}"
                 Method: PUT
-            
-  
-  
   RoomsPerDay:
     Type: AWS::Serverless::Function
     Properties:
-        FunctionName: RoomsPerDay
-        Handler: movie.RoomsPerDay
+        FunctionName: roomsPerDay
+        Handler: movie.roomsPerDay
         Runtime: python3.6
         CodeUri: package/
         #Role: !GetAtt MyLambdaRole.Arn
@@ -72,12 +69,11 @@ Resources:
                 RestApiId: !Ref MyAPI
                 Path: "/roomsPerDay/movies/{movie_id}"
                 Method: GET
-  
   PeopleAttending:
     Type: AWS::Serverless::Function
     Properties:
-        FunctionName: PeopleAttending
-        Handler: movie.PeopleAttending
+        FunctionName: peopleAttending
+        Handler: movie.peopleAttending
         Runtime: python3.6
         CodeUri: package/
         #Role: !GetAtt MyLambdaRole.Arn
@@ -88,18 +84,17 @@ Resources:
           Variables:
             MOVIES_TABLE: !Ref MoviesTable
         Events:
-            GetPeopleAttnding:
+            GetUsers:
               Type: Api
               Properties:
                 RestApiId: !Ref MyAPI
                 Path: "/peopleAttending/movies/{movie_id}/rooms/{room_id}"
                 Method: GET
-
   GetRoom:
     Type: AWS::Serverless::Function
     Properties:
-        FunctionName: GetRoom
-        Handler: movie.GetRoom
+        FunctionName: getRoom
+        Handler: movie.getRoom
         Runtime: python3.6
         CodeUri: package/
         #Role: !GetAtt MyLambdaRole.Arn
@@ -110,45 +105,22 @@ Resources:
           Variables:
             MOVIES_TABLE: !Ref MoviesTable
         Events:
-            GetRooms:
+            GetUsers:
               Type: Api
               Properties:
                 RestApiId: !Ref MyAPI
                 Path: "/rooms/{room_id}"
                 Method: GET
-
-
-  GetPerson:
+  PutPeopleRoom:
     Type: AWS::Serverless::Function
     Properties:
-        FunctionName: GetPerson
-        Handler: movie.GetPerson
+        FunctionName: putPeopleRoom
+        Handler: movie.putPeopleRoom
         Runtime: python3.6
         CodeUri: package/
-        #Role: !GetAtt MyLambdaRole.Arn
         Policies:
           - DynamoDBReadPolicy:
               TableName: !Ref MoviesTable
-        Environment:
-          Variables:
-            MOVIES_TABLE: !Ref MoviesTable
-        Events:
-            GetPeople:
-              Type: Api
-              Properties:
-                RestApiId: !Ref MyAPI
-                Path: "/watched/people/{person_id}"
-                Method: GET
-  
-  
-  PutPerson:
-    Type: AWS::Serverless::Function
-    Properties:
-        FunctionName: putPerson
-        Handler: movie.putPerson
-        Runtime: python3.6
-        CodeUri: package/
-        Policies:
           - DynamoDBWritePolicy:
               TableName: !Ref MoviesTable
         #Role: !GetAtt MyLambdaRole.Arn
@@ -156,12 +128,35 @@ Resources:
           Variables:
             MOVIES_TABLE: !Ref MoviesTable
         Events:
-            GetPeople:
+            GetMovies:
               Type: Api
               Properties:
                 RestApiId: !Ref MyAPI
-                Path: "/people/{person_id}"
+                Path: "putPeopleRoom/rooms/{room_id}"
                 Method: PUT
+  GetPerson:
+    Type: AWS::Serverless::Function
+    Properties:
+        FunctionName: getPerson
+        Handler: movie.getPerson
+        Runtime: python3.6
+        CodeUri: package/
+        #Role: !GetAtt MyLambdaRole.Arn
+        Policies:
+          - DynamoDBReadPolicy:
+              TableName: !Ref MoviesTable
+        Environment:
+          Variables:
+            MOVIES_TABLE: !Ref MoviesTable
+        Events:
+            GetUsers:
+              Type: Api
+              Properties:
+                RestApiId: !Ref MyAPI
+                Path: "/watched/people/{person_id}"
+                Method: GET
+  
+                
   MyAPI:
       Type: AWS::Serverless::Api
       Properties:
